@@ -1,0 +1,98 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Чекер нотификаций НЯК - Настройки</title>
+<style>
+body {
+  font-family:helvetica, arial, sans-serif;
+  font-size:80%;
+  margin:10px;
+}
+
+#header {
+  padding-bottom:1.5em;
+  padding-top:1.5em;
+}
+
+#header h1 {
+  font-size: 156%;
+  display:inline;
+  padding-bottom:43px;
+  padding-top:40px;
+}
+
+.section-header {
+  background:#ebeff9;
+  border-top:1px solid #b5c7de;
+  font-size:99%;
+  padding:3px 0 2px 5px;
+  font-weight:bold;
+  margin-bottom:1em;
+  margin-top:4em;
+}
+
+.section-header.first {
+  margin-top:1em;
+}
+
+#user-list {
+  width:400px;
+  height: 100px;
+  margin-left:2px;
+}
+
+#footer {
+  margin-top:2em;
+}
+#change-notes {
+  margin-top:4em;
+}
+#change-notes h4{
+  margin-bottom:0;
+}
+#change-notes ul{
+  margin-top:0.5em;
+}
+
+</style>
+<script src="options.js"></script>
+</head>
+<body>
+
+<div id="header"><h1>Страница настроек расширения Народной карты</h1></div>
+
+<div class="section-header first">Список пользователей (через запятую)</div>
+<p><textarea id="user-list"></textarea></p>
+<div id="footer">
+  <button id="save-button" style="font-weight:bold">Сохранить</button>
+  <button id="cancel-button">Отмена</button>
+  <button id="revert-button">Сброс настроек</button>
+</div>
+<div id="change-notes">
+	<h3>Заметки к релизам</h3>
+	<h4>1.3</h4>
+	<ul>
+		<li>Миграция в Гугловый магазин приложений</li>
+		<li>Теперь фильтруется робот</li>
+		<li>Добавлен чекбокс для выключения фильтра на странице "События в регионе"</li>
+	</ul>
+	<h4>1.2 - 1.2.3</h4>
+	<ul>
+		<li>Пользовательский фильтр теперь применяется автоматически для страницы "События в регионе"</li>
+		<li>Добавился этот лог изменений</li>
+		<li>Добавилась кнопка сброс настроек</li>
+		<li>Новый список модераторов</li>
+	</ul>
+	<h4>1.1</h4>
+	<ul>
+		<li>Добавился счётчик уведомлений в иконке приложения</li>
+	</ul>
+	<h4>1.0 - 1.0.4</h4>
+	<ul>
+		<li>Добавилась кнопка для фильтрации уведомлений</li>
+	</ul>
+</div>
+
+</body>
+</html>
