@@ -62,13 +62,19 @@ var YaExt = window.YaExt || {};
 		input.className = "b-wmdata__more__control";
 		input.style.display = "block";
 		input.type = "submit";
-		input.value = "удалите изменения модераторов";
+		input.value = "удалить выделенные";
 		input.addEventListener("click", function() {
 			YaExt.filterIds();
 		}, false);
+		input.id = "filter-button";
 		
 		var form = $(".b-wmdata__more")[0];
-		form.appendChild(input);
+		var div = document.createElement("div");
+		var label = document.createElement("label");
+		label.innerHTML = "или";
+		div.appendChild(label);
+		div.appendChild(input);
+		form.appendChild(div);
 		console.log("New button has been added.");
 	}
 
@@ -93,6 +99,69 @@ var YaExt = window.YaExt || {};
 		}
 		console.log("Unnecessary " + filteredPositions.length + " log entries have been removed");
 	}
+
+	function fetchUser(user, callback) {
+		var req = new XMLHttpRequest();
+		req.open(
+			"GET",
+			"http://n.maps.yandex.ru/users/" + user + "/", 
+			true);
+		req.onload = function() {
+			if (!!req.response) {
+				var userMap = JSON.parse(localStorage.users); 
+				userMap[user] = {
+					creations : (function() {var a = $("a", $(".b-about-user__section__item", req.response)[1])[0]; if (!!a) return a.innerHTML.match(/[0-9]+/)[0]; return 0;})(), 
+					edits : (function() {var a = $("a", $(".b-about-user__section__item", req.response)[0])[0]; if (!!a) return a.innerHTML.match(/[0-9]+/)[0]; return 0;})(), 
+					version : new Date().getTime()
+				};
+				localStorage.users = JSON.stringify(userMap);
+				console.log("Fetched new user", userMap[user]);
+				if (!!callback) callback(userMap[user]);
+			}
+		};
+		req.send(null);
+	}
+	
+	function addExpCount() {
+		var users = $(".b-wmdata__layout .b-user");
+		var userMap = JSON.parse(localStorage.users);
+		for (var i = 0; i < users.length; i++) {
+			var node = users[i].parentNode;
+			if (typeof users[i].firstChild.href == "undefined") continue;
+			var user = users[i].firstChild.href.match(/\/users\/(.*)\//g)[0]; 
+			user = user.substring(7, user.length - 1); 
+			
+			var td = document.createElement("td");
+			td.className = "b-wmdata__layout__l";
+			if (!!userMap[user] && new Date().getTime() - userMap[user].version < 1000 * 3600 * 24) {
+				td.innerHTML = userMap[user].creations;				
+			} else {
+				fetchUser(user, function(userObj) {
+					td.innerHTML = userObj.creations;
+				});
+			}
+			//td.innerHTML = Math.floor(10 + Math.random() * 10000);
+			node.parentNode.insertBefore(td, node); 
+		}
+	}
+	
+	function markMatchedEntries() {
+		var users = $(".b-wmdata__layout .b-user");
+		var filteredPositions = getFilteredPositions();
+		for (var i = 0; i < users.length; i++) {
+			var node = users[i].parentNode.parentNode;
+			node.removeAttribute("style");
+			node.className = "";
+		}
+		for (var i = 0; i < filteredPositions.length; i++) {
+			var node = users[filteredPositions[i]].parentNode.parentNode;
+			//node.style.backgroundColor = "lightgoldenrodyellow";
+			node.style.backgroundColor = "rgb(248, 248, 240)";
+			node.className = "b-wmdata__item_moderator";
+		}
+		//console.log("Unnecessary " + filteredPositions.length + " log entries have been hided");		
+	}
+
 	
 	function hideMatchedEntries() {
 		var users = $(".b-wmdata__layout .b-user");
@@ -116,6 +185,7 @@ var YaExt = window.YaExt || {};
 
 	
 	function tryToFilter() {
+		if (document.location.href.indexOf("/users/") != -1) return;
 		if (canBeFiltered()) {
 			if (document.location.href.indexOf("modconsole/events-region") != -1) {
 				if (localStorage.disableUserFilter == "false") {
@@ -124,7 +194,10 @@ var YaExt = window.YaExt || {};
 					console.log("Can't filter, because filter was disabled");
 				}
 			} else {
-				createFilterButton();
+				if ($(".b-wmdata__more #filter-button").length == 0) {
+					createFilterButton();
+				}
+				markMatchedEntries();
 			}
 			return true;
 		} else {
@@ -160,9 +233,37 @@ var YaExt = window.YaExt || {};
 			checkboxLabel.innerHTML = "Выключить фильтр";
 			checkboxLabel.style.marginLeft = "5px";
 			parentElement.appendChild(checkboxLabel);
+		} else if (document.location.href.indexOf("/users/") != -1) {
+			if (typeof localStorage.users == "undefined") localStorage.users = "[]";
+			var users = $(".b-wminfo-i .b-user"); 
+			var userMap = JSON.parse(localStorage.users); 
+			
+			if (users.length > 0) {
+				for (var i = 0; i < users.length; i++) {
+					if (typeof users[i].firstChild.href == "undefined") continue; 
+					var user = users[i].firstChild.href.match(/\/users\/(.*)\//g)[0]; 
+					user = user.substring(7, user.length - 1); 
+					userMap[user] = {
+						creations : users[i].parentNode.parentNode.nextSibling.firstChild.innerHTML, 
+						edits : users[i].parentNode.parentNode.nextSibling.nextSibling.firstChild.innerHTML,
+						version : new Date().getTime()
+					}; 
+				} 
+			} else {
+				var user = document.location.href.match(/\/users\/(.*)\//g)[0]; 
+				user = user.substring(7, user.length - 1); 
+				userMap[user] = {
+					creations : (function() {var a = $("a", $(".b-about-user__section__item")[1])[0]; if (!!a) return a.innerHTML.match(/[0-9]+/)[0]; return 0;})(), 
+					edits : (function() {var a = $("a", $(".b-about-user__section__item")[0])[0]; if (!!a) return a.innerHTML.match(/[0-9]+/)[0]; return 0;})(),
+					version : new Date().getTime()
+				};
+			}
+			localStorage.users = JSON.stringify(userMap);
+			return;
 		}
 		
 		isFiltered = tryToFilter();	
+		// addExpCount();
 	}
 	
 	var isFiltered = false;	
@@ -170,7 +271,7 @@ var YaExt = window.YaExt || {};
 	YaExt.setFilteredUsers = function(newFilteredUsers) {
 		filteredUsers = newFilteredUsers;
 		console.log("New user list has been set: " + newFilteredUsers.length + " users");
-		if (!isFiltered) isFiltered = tryToFilter();
+		tryToFilter();
 	};
 	
 	YaExt.getFilteredUsers = function() {return filteredUsers;};

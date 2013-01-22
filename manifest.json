@@ -1,6 +1,6 @@
 {
 	"name": "Дополнение для Народной карты",
-	"version": "1.3.1",
+	"version": "1.3.3",
 	"manifest_version": 2,
 	"description": "Дополнение для удаления ненужных нотификаций.",
 	"icons": { 
@@ -17,11 +17,12 @@
 	},
 	"options_page": "options.html",
 	"permissions": [
-		"cookies", "tabs", "webNavigation", "storage", "alarms", "idle", "notifications", 
+		"cookies", "tabs", "webNavigation", "storage", "alarms", "idle", "notifications", "contextMenus",
 		"*://*.yandex.ru/*"
 	],
 	"content_scripts": [{
-		"matches": ["*://n.maps.yandex.ru/notifications/*", 
+		"matches": ["*://n.maps.yandex.ru/users/*",
+					"*://n.maps.yandex.ru/notifications/*", 
 					"*://n.maps.yandex.ru/modconsole/events-region/*"],
 		"js": ["content_script.js"]
 	}],

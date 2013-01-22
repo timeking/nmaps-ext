@@ -16,13 +16,17 @@ function initFilter(callback) {
 			if (newUsers.indexOf(oldUsers[i]) == -1) diff.push(oldUsers[i]);
 		}
 		if (diff.length == 0) {
-			alert("Te*mik подготовил новый более полный список модераторов, в котором уже находятся пользоватли из вашего списка. Жмите ОК. :)");
+			alert("Te*mik РїРѕРґРіРѕС‚РѕРІРёР» РЅРѕРІС‹Р№ Р±РѕР»РµРµ РїРѕР»РЅС‹Р№ СЃРїРёСЃРѕРє РјРѕРґРµСЂР°С‚РѕСЂРѕРІ, РІ РєРѕС‚РѕСЂРѕРј СѓР¶Рµ РЅР°С…РѕРґСЏС‚СЃСЏ РїРѕР»СЊР·РѕРІР°С‚Р»Рё РёР· РІР°С€РµРіРѕ СЃРїРёСЃРєР°. Р–РјРёС‚Рµ РћРљ. :)");
 		} else {
-			if (confirm("Te*mik подготовил большой список модераторов, ваш прежний список пользователей для фильтрации будет изменён. Хотите ли вы добавить пользователей из вашего старого списка, которые не присутствуют в списке от Te*mik: " + diff)) localStorage.filteredUsers += "," + diff;
+			if (confirm("Te*mik РїРѕРґРіРѕС‚РѕРІРёР» Р±РѕР»СЊС€РѕР№ СЃРїРёСЃРѕРє РјРѕРґРµСЂР°С‚РѕСЂРѕРІ, РІР°С€ РїСЂРµР¶РЅРёР№ СЃРїРёСЃРѕРє РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ РґР»СЏ С„РёР»СЊС‚СЂР°С†РёРё Р±СѓРґРµС‚ РёР·РјРµРЅС‘РЅ. РҐРѕС‚РёС‚Рµ Р»Рё РІС‹ РґРѕР±Р°РІРёС‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ РёР· РІР°С€РµРіРѕ СЃС‚Р°СЂРѕРіРѕ СЃРїРёСЃРєР°, РєРѕС‚РѕСЂС‹Рµ РЅРµ РїСЂРёСЃСѓС‚СЃС‚РІСѓСЋС‚ РІ СЃРїРёСЃРєРµ РѕС‚ Te*mik: " + diff)) localStorage.filteredUsers += "," + diff;
 		}
 		delete localStorage.moderators;
 	}
 	if (typeof(callback) != "undefined") callback();
+}
+
+function getUsers() {
+	return localStorage.filteredUsers.split(",");
 }
 
 
@@ -114,7 +118,49 @@ function startRequest(params) {
 	);
 }
 
+chrome.contextMenus.onClicked.addListener(function(info, tab) {
+	if (info.menuItemId == "addMenuId") {
+		var users = localStorage.filteredUsers.split(",");
+		var user = info.linkUrl.match(/\/users\/(.*)\//g)[0]; 
+		user = user.substring(7, user.length - 1); 
+		if (users.indexOf(user) == -1) {
+			users.push(user);
+			localStorage.filteredUsers = "" + users;
+			//chrome.tabs.getSelected(null, function(tab) {
+				chrome.tabs.sendMessage(tab.id, {filteredUsers: localStorage.filteredUsers});
+		//});
+		} else {
+			alert("РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ '" + user + "' СѓР¶Рµ РЅР°С…РѕРґРёС‚СЃСЏ РІ С„РёР»СЊС‚СЂРµ");
+		}
+	} else if (info.menuItemId == "removeMenuId") {
+		var users = localStorage.filteredUsers.split(",");
+		var user = info.linkUrl.match(/\/users\/(.*)\//g)[0]; 
+		user = user.substring(7, user.length - 1); 
+		var index = users.indexOf(user);
+		if (index != -1) {
+			users.splice(index, 1);
+			localStorage.filteredUsers = "" + users;
+			localStorage.filteredUsers = "" + users;
+			//chrome.tabs.getSelected(null, function(tab) {
+				chrome.tabs.sendMessage(tab.id, {filteredUsers: localStorage.filteredUsers});
+			//});
+		} else {
+			alert("РџРѕР»СЊР·РѕРІР°С‚РµР»СЏ '" + user + "' РІ С„РёР»СЊС‚СЂРµ РЅРµС‚");
+		}
+	}
+});
+
 function onInit() {
+	chrome.contextMenus.create({"title": "Р”РѕР±Р°РІРёС‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РІ С„РёР»СЊС‚СЂ", 
+		"contexts":["link"], 
+		"id": "addMenuId", 
+		"targetUrlPatterns" : ["http://n.maps.yandex.ru/users/*/*"]
+	});
+	chrome.contextMenus.create({"title": "РЈРґР°Р»РёС‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР· С„РёР»СЊС‚СЂР°", 
+		"contexts":["link"], 
+		"id": "removeMenuId", 
+		"targetUrlPatterns" : ["http://n.maps.yandex.ru/users/*/*"]
+	});
 	startRequest({scheduleRequest: true});
 }
 
