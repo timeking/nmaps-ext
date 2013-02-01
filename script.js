@@ -57,24 +57,36 @@ var YaExt = window.YaExt || {};
 		return filteredUsers.length != 0 && getFilteredPositions().length != 0;
 	}
 
+
 	function createFilterButton() {
-		var input = document.createElement("input");
-		input.className = "b-wmdata__more__control";
-		input.style.display = "block";
-		input.type = "submit";
-		input.value = "удалить выделенные";
-		input.addEventListener("click", function() {
-			YaExt.filterIds();
-		}, false);
-		input.id = "filter-button";
+		var createInput = function () {
+			var input = document.createElement("input")
+			input.className = "b-wmdata__more__control";
+			input.style.display = "block";
+			input.type = "submit";
+			input.value = "удалить выделенные";
+			input.addEventListener("click", function() {
+				YaExt.filterIds();
+				var form = $(".b-wmdata__more")[0].submit();
+			}, false);
+			input.id = "filter-button";
+			return input;
+		};
 		
+		var top = $(".b-page-title")[0];
+		var divTop = document.createElement("div");
+		divTop.style.marginTop = "1em";
+		divTop.appendChild(createInput());
+		top.appendChild(divTop);
+	
 		var form = $(".b-wmdata__more")[0];
-		var div = document.createElement("div");
 		var label = document.createElement("label");
 		label.innerHTML = "или";
-		div.appendChild(label);
-		div.appendChild(input);
-		form.appendChild(div);
+		var divBottom = document.createElement("div");
+		divBottom.appendChild(label);
+		divBottom.appendChild(createInput());
+		form.appendChild(divBottom);
+	
 		console.log("New button has been added.");
 	}
 
@@ -148,16 +160,36 @@ var YaExt = window.YaExt || {};
 	function markMatchedEntries() {
 		var users = $(".b-wmdata__layout .b-user");
 		var filteredPositions = getFilteredPositions();
+		var setCssText = function (selector, value) {
+			var target = $(selector, node);
+			if (target.length != 0) target[0].style.cssText = value;
+		}
+		
 		for (var i = 0; i < users.length; i++) {
 			var node = users[i].parentNode.parentNode;
-			node.removeAttribute("style");
-			node.className = "";
+			//node.removeAttribute("style");
+			//node.style.backgroundColor = "";
+			//node.removeAttribute("style");
+
+			setCssText(".b-user", "");
+			setCssText(".b-user__link", "");
+			setCssText(".b-user__first-letter", "");
+
+			//node.className = "";
 		}
 		for (var i = 0; i < filteredPositions.length; i++) {
 			var node = users[filteredPositions[i]].parentNode.parentNode;
 			//node.style.backgroundColor = "lightgoldenrodyellow";
-			node.style.backgroundColor = "rgb(248, 248, 240)";
-			node.className = "b-wmdata__item_moderator";
+			//node.style.backgroundColor = "rgb(248, 248, 240)";
+			//node.style.backgroundColor = "rgb(242, 255, 215)";
+			//node.className = "b-wmdata__item_moderator";
+			if (node.className != "b-wmdata__item_moderator") {
+				setCssText(".b-user", "color:rgb(0, 218, 0) !important");
+				setCssText(".b-user__link", "color:rgb(0, 218, 0) !important");
+				setCssText(".b-user__first-letter", "color:rgb(0, 218, 0) !important");
+
+				//$(".b-user", node)[0].style.cssText = "color:green !important";
+			};
 		}
 		//console.log("Unnecessary " + filteredPositions.length + " log entries have been hided");		
 	}
@@ -201,6 +233,7 @@ var YaExt = window.YaExt || {};
 			}
 			return true;
 		} else {
+			markMatchedEntries();
 			console.log("This page can't be filtered. ");
 			return false;
 		}
