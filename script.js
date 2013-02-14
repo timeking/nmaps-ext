@@ -1,8 +1,8 @@
 var YaExt = window.YaExt || {};
 (function() {
-	var filteredUsers = [];
+	var usersToFilter = [];
 	
-	function getFilteredPositions() {
+	function getPositionsToFilter() {
 		var users = $(".b-wmdata__layout .b-user");
 		if (users.length == 0) {
 			console.log("No users on page");
@@ -14,8 +14,8 @@ var YaExt = window.YaExt || {};
 			var href = users[i].firstChild.href;
 			var needToFilter = false;
 			if (typeof href != "undefined") {
-				for (var j = 0; j < filteredUsers.length; j++) {
-					if (href.indexOf("/users/" + filteredUsers[j] + "/") != -1) {
+				for (var j = 0; j < usersToFilter.length; j++) {
+					if (href.indexOf("/users/" + usersToFilter[j] + "/") != -1) {
 						needToFilter = true;
 						break;
 					};
@@ -24,6 +24,19 @@ var YaExt = window.YaExt || {};
 				// TODO: add setting
 				needToFilter = true; // Hide "Робот"
 			}
+			if (!needToFilter) continue;
+			// check actions
+			var actionLabels = $(".b-wmdata__layout__c2 .b-pseudo-link", users[i].parentNode.parentNode);
+			if (actionLabels.length != 0) {
+				if (actionLabels[0].innerText == "прокомментировал") {
+					needToFilter = false;
+				} else if (actionLabels[0].innerText == "поступила жалоба" || actionLabels[0].innerText == "поступила жалоба на фотографию") {
+					needToFilter = false;
+				} else if (actionLabels[0].innerText == "поступила апелляция") { 
+					needToFilter = false;
+				}
+			}
+			
 			if (needToFilter) {
 				filteredPositions.push(i);
 			}
@@ -45,7 +58,7 @@ var YaExt = window.YaExt || {};
 		}
 		
 		var filteredIds = [];
-		var filteredPositons = getFilteredPositions();
+		var filteredPositons = getPositionsToFilter();
 		
 		for (var i = 0; i < filteredPositons.length; i++) {
 			filteredIds.push(ids[filteredPositons[i]]);
@@ -54,7 +67,7 @@ var YaExt = window.YaExt || {};
 	}
 		
 	function canBeFiltered() {
-		return filteredUsers.length != 0 && getFilteredPositions().length != 0;
+		return usersToFilter.length != 0 && getPositionsToFilter().length != 0;
 	}
 
 
@@ -104,7 +117,7 @@ var YaExt = window.YaExt || {};
 	
 	function removeMatchedEntries() {
 		var users = $(".b-wmdata__layout .b-user");
-		var filteredPositions = getFilteredPositions();
+		var filteredPositions = getPositionsToFilter();
 		for (var i = 0; i < filteredPositions.length; i++) {
 			var nodeToRemove = users[filteredPositions[i]].parentNode.parentNode;
 			needToRemove.parentNode.remove(needToRemove);
@@ -159,7 +172,7 @@ var YaExt = window.YaExt || {};
 	
 	function markMatchedEntries() {
 		var users = $(".b-wmdata__layout .b-user");
-		var filteredPositions = getFilteredPositions();
+		var filteredPositions = getPositionsToFilter();
 		var setCssText = function (selector, value) {
 			var target = $(selector, node);
 			if (target.length != 0) target[0].style.cssText = value;
@@ -175,7 +188,9 @@ var YaExt = window.YaExt || {};
 			setCssText(".b-user__link", "");
 			setCssText(".b-user__first-letter", "");
 
-			//node.className = "";
+			if (node.className == "b-wmdata__item_moderator") {
+				node.className = "";
+			}
 		}
 		for (var i = 0; i < filteredPositions.length; i++) {
 			var node = users[filteredPositions[i]].parentNode.parentNode;
@@ -183,13 +198,13 @@ var YaExt = window.YaExt || {};
 			//node.style.backgroundColor = "rgb(248, 248, 240)";
 			//node.style.backgroundColor = "rgb(242, 255, 215)";
 			//node.className = "b-wmdata__item_moderator";
-			if (node.className != "b-wmdata__item_moderator") {
+			//if (node.className != "b-wmdata__item_moderator") {
 				setCssText(".b-user", "color:rgb(0, 218, 0) !important");
 				setCssText(".b-user__link", "color:rgb(0, 218, 0) !important");
 				setCssText(".b-user__first-letter", "color:rgb(0, 218, 0) !important");
 
 				//$(".b-user", node)[0].style.cssText = "color:green !important";
-			};
+			//};
 		}
 		//console.log("Unnecessary " + filteredPositions.length + " log entries have been hided");		
 	}
@@ -197,7 +212,7 @@ var YaExt = window.YaExt || {};
 	
 	function hideMatchedEntries() {
 		var users = $(".b-wmdata__layout .b-user");
-		var filteredPositions = getFilteredPositions();
+		var filteredPositions = getPositionsToFilter();
 		for (var i = 0; i < filteredPositions.length; i++) {
 			var nodeToHide = users[filteredPositions[i]].parentNode.parentNode;
 			nodeToHide.style.display = "none";
@@ -207,7 +222,7 @@ var YaExt = window.YaExt || {};
 
 	function unhideMatchedEntries() {
 		var users = $(".b-wmdata__layout .b-user");
-		var filteredPositions = getFilteredPositions();
+		var filteredPositions = getPositionsToFilter();
 		for (var i = 0; i < filteredPositions.length; i++) {
 			var nodeToHide = users[filteredPositions[i]].parentNode.parentNode;
 			nodeToHide.style.display = "";
@@ -223,6 +238,7 @@ var YaExt = window.YaExt || {};
 				if (localStorage.disableUserFilter == "false") {
 					hideMatchedEntries();
 				} else {
+					markMatchedEntries();
 					console.log("Can't filter, because filter was disabled");
 				}
 			} else {
@@ -239,33 +255,49 @@ var YaExt = window.YaExt || {};
 		}
 	}
 
+	function addFilterCheckbox(parentElement) {
+		var checkbox = document.createElement("input");
+		checkbox.name = "YaExt-DisableFilter";
+		checkbox.type = "checkbox";
+		if (localStorage.disableUserFilter == "true") {
+			checkbox.checked = "checked";
+		}
+		checkbox.addEventListener("click", function() {
+			localStorage.disableUserFilter = this.checked;
+			if (localStorage.disableUserFilter == "true") {
+				unhideMatchedEntries();
+				markMatchedEntries();
+			} else {
+				hideMatchedEntries();
+			}
+			// update check status
+			var checkboxes = $('input[name="YaExt-DisableFilter"]');
+			for (var i = 0; i < checkboxes.length; i++) {
+				checkboxes[i].checked = this.checked;
+			}
+		}, false);
+		var checkboxLabel = document.createElement("label");
+		checkboxLabel.setAttribute("for", "YaExt-DisableFilter");
+		checkboxLabel.innerHTML = "Выключить фильтр";
+		checkboxLabel.style.marginLeft = "5px";
+		parentElement.appendChild(checkbox);
+		parentElement.appendChild(checkboxLabel);
+		return checkbox;
+	}
+	
 	function init() {
 		if (typeof localStorage.disableUserFilter == "undefined") {
 			localStorage.disableUserFilter = false;
 		}
 		
 		if (document.location.href.indexOf("modconsole/events-region") != -1) {
-			var parentElement = $(".b-wmdata")[0];
-			var checkbox = document.createElement("input");
-			checkbox.name = "YaExt-DisableFilter";
-			checkbox.type = "checkbox";
-			if (localStorage.disableUserFilter == "true") {
-				checkbox.checked = "checked";
-			}
-			checkbox.addEventListener("click", function() {
-				localStorage.disableUserFilter = this.checked;
-				if (localStorage.disableUserFilter == "true") {
-					unhideMatchedEntries();
-				} else {
-					hideMatchedEntries();
-				}
-			}, false);
-			parentElement.appendChild(checkbox);
-			var checkboxLabel = document.createElement("label");
-			checkboxLabel.setAttribute("for", "YaExt-DisableFilter");
-			checkboxLabel.innerHTML = "Выключить фильтр";
-			checkboxLabel.style.marginLeft = "5px";
-			parentElement.appendChild(checkboxLabel);
+			var top = $(".b-page-title")[0];
+			var divTop = document.createElement("div");
+			divTop.style.marginTop = "1em";
+			top.appendChild(divTop);
+			addFilterCheckbox(divTop);
+
+			addFilterCheckbox($(".b-wmdata")[0]);
 		} else if (document.location.href.indexOf("/users/") != -1) {
 			if (typeof localStorage.users == "undefined") localStorage.users = "[]";
 			var users = $(".b-wminfo-i .b-user"); 
@@ -302,12 +334,12 @@ var YaExt = window.YaExt || {};
 	var isFiltered = false;	
 
 	YaExt.setFilteredUsers = function(newFilteredUsers) {
-		filteredUsers = newFilteredUsers;
+		usersToFilter = newFilteredUsers;
 		console.log("New user list has been set: " + newFilteredUsers.length + " users");
 		tryToFilter();
 	};
 	
-	YaExt.getFilteredUsers = function() {return filteredUsers;};
+	YaExt.getFilteredUsers = function() {return usersToFilter;};
 
 	YaExt.filterIds = function() {
 		var idsInput = $("input[name=ids]")[0];
